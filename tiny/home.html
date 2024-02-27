@@ -1,7 +1,33 @@
 <html>
 <head><title>test</title></head>
-<body> 
-<img align="middle" src="godzilla.gif">
-Dave O'Hallaron
+<body style="background-color:rgb(56, 192, 199)">
+<div style="display: flex;">
+    <img style="margin-left: 10%; margin-top: 7%; margin-right: 10%;" src="godzilla.jpg" width="50px" height="50px">
+    <video muted autoplay loop width="150px" height="120px">
+        <source src="blitz.mp4" type="video/mp4">
+        <strong>Your browser does not support the video tag.</strong>
+    </video>
+</div>
+<input type="text" id="userInput" placeholder="Enter something">
+<button onclick="saveInput()">Save</button>
+<div id="savedInput">Saved input will appear here</div>
+<script>
+    window.onload = function() {
+        const saved = localStorage.getItem("userInput");
+        if (saved) {
+            document.getElementById("savedInput").innerText = saved;
+        }
+    };
+    function saveInput() {
+        const input = document.getElementById("userInput").value;
+        localStorage.setItem("userInput", input);
+        document.getElementById("savedInput").innerText = input;
+    }
+</script>
+<form action="/cgi-bin/form-adder" method="GET">
+    <p>first number: <input type="text" name="first"/></p>
+    <p>second number: <input type="text" name="second"/></p>
+    <input type="submit" value="Submit"/>
+</form>
 </body>
 </html>
