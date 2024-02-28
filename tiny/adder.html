@@ -1,0 +1,52 @@
+<!-- <!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Tiny Server</title>
+</head>
+<body>
+<form action="/cgi-bin/adder" method="GET">
+  <p>first number: <input type="text" name="first"/></p>
+  <p>second number: <input type="text" name="second"/></p>
+  <input type="submit" value="Submit"/>
+</form>
+</body>
+</html> -->
+<html>
+<head><title>test</title></head>
+<body style="background-color:rgb(56, 192, 199)">
+<img style="margin-left: 10%; margin-top: 7%; margin-right: 10%;" src="godzilla.jpg" width="50px" height="50px">
+<div style="display: flex;">
+    <video muted autoplay loop width="150px" height="120px">
+        <source src="blitz.mp4" type="video/mp4">
+    </video>
+    <video muted autoplay loop width="150px" height="120px">
+        <source src="leesin.mp4" type="video/mp4">
+    </video>
+</div>
+<video muted autoplay loop width="150px" height="120px" style="margin-top: -30px;">
+    <source src="blitz2.mp4" type="video/mp4" >
+</video>
+<input type="text" id="userInput" placeholder="Enter something">
+<button onclick="saveInput()">Save</button>
+<div id="savedInput">Saved input</div>
+<script>
+    window.onload = function() {
+        const saved = localStorage.getItem("userInput");
+        if (saved) {
+            document.getElementById("savedInput").innerText = saved;
+        }
+    };
+    function saveInput() {
+        const input = document.getElementById("userInput").value;
+        localStorage.setItem("userInput", input);
+        document.getElementById("savedInput").innerText = input;
+    }
+</script>
+<form action="/cgi-bin/adder" method="GET">
+    <p>first number: <input type="text" name="first"/></p>
+    <p>second number: <input type="text" name="second"/></p>
+    <input type="submit" value="Submit"/>
+  </form>
+</body>
+</html>
