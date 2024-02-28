@@ -58,11 +58,13 @@ void doit(int fd)
 
   /* Read request line and headers */
   Rio_readinitb(&rio, fd);
+  Rio_readlineb(&rio, buf, MAXLINE);
   if (!Rio_readlineb(&rio, buf, MAXLINE)) // line:netp:doit:readrequest
     return;
+  printf("Request headers:\n");
   printf("%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version); // line:netp:doit:parserequest
-  if (strcasecmp(method, "GET"))
+  if (strcasecmp(method, "GET") && strcasecmp(method, "HEAD"))
   { // line:netp:doit:beginrequesterr
     clienterror(fd, method, "501", "Not Implemented", "Tiny does not implement this method");
     return;
@@ -73,7 +75,7 @@ void doit(int fd)
   is_static = parse_uri(uri, filename, cgiargs); // line:netp:doit:staticcheck
   if (stat(filename, &sbuf) < 0)
   { // line:netp:doit:beginnotfound
-    (fd, filename, "404", "Not found", "Tiny couldn't find this file");
+    clienterror(fd, filename, "404", "Not found", "Tiny couldn't find this file");
     return;
   } // line:netp:doit:endnotfound
 
@@ -132,7 +134,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
     strcpy(filename, ".");           // line:netp:parseuri:beginconvert1
     strcat(filename, uri);           // line:netp:parseuri:endconvert1
     if (uri[strlen(uri) - 1] == '/') // line:netp:parseuri:slashcheck
-      strcat(filename, "home.html"); // line:netp:parseuri:appenddefault
+      strcat(filename, "adder.html"); // line:netp:parseuri:appenddefault
     return 1;
   }
   else
@@ -233,8 +235,7 @@ void serve_dynamic(int fd, char *filename, char *cgiargs)
  * clienterror - returns an error message to the client
  */
 /* $begin clienterror */
-void clienterror(int fd, char *cause, char *errnum,
-                 char *shortmsg, char *longmsg)
+void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg)
 {
   char buf[MAXLINE];
 
