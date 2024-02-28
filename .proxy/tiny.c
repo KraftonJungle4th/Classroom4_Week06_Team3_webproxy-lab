@@ -191,7 +191,7 @@ void serve_dynamic(int fd, char *filename, char *cgiargs, char *method)
 
     if(Fork() == 0){
         setenv("QUERY_STRING", cgiargs, 1); //setservent?
-        setenv("REQUEST_METHOD", method, 1); // proxy에서 추가
+        //setenv("REQUEST_METHOD", method, 1); // proxy에서 추가
         Dup2(fd, STDOUT_FILENO);
         Execve(filename, emptylist, environ);
     }
