@@ -1,19 +1,13 @@
-/* $begin tinymain */
-/*
- * tiny.c - A simple, iterative HTTP/1.0 Web server that uses the
- *     GET method to serve static and dynamic content.
- *
- * Updated 11/2019 droh
- *   - Fixed sprintf() aliasing issue in serve_static(), and clienterror().
- */
 #include "csapp.h"
+                                                      
+                                                      
 void echo(int connfd);
 void doit(int fd);
 void read_requesthdrs(rio_t *rp);
 int parse_uri(char *uri, char *filename, char *cgiargs);
-void serve_static(int fd, char *filename, int filesize);
+void serve_static(int fd, char *filename, int filesize, char method_flag);
 void get_filetype(char *filename, char *filetype);
-void serve_dynamic(int fd, char *filename, char *cgiargs);
+void serve_dynamic(int fd, char *filename, char *cgiargs, char method_flag);
 void clienterror(int fd, char *cause, char *errnum,
                  char *shortmsg, char *longmsg);
 
@@ -52,6 +46,7 @@ void doit(int fd)
 {
   int is_static;
   struct stat sbuf;
+  char method_flag;
   char buf[MAXLINE], method[MAXLINE], uri[MAXLINE], version[MAXLINE];
   char filename[MAXLINE], cgiargs[MAXLINE];
   rio_t rio;
@@ -59,18 +54,16 @@ void doit(int fd)
   /* Read request line and headers */
   Rio_readinitb(&rio, fd);
   Rio_readlineb(&rio, buf, MAXLINE);
-  if (!Rio_readlineb(&rio, buf, MAXLINE)) // line:netp:doit:readrequest
-    return;
-  printf("Request headers:\n");
   printf("%s", buf);
   sscanf(buf, "%s %s %s", method, uri, version); // line:netp:doit:parserequest
-  if (strcasecmp(method, "GET") && strcasecmp(method, "HEAD"))
+  if (strcasecmp(method, "GET") * strcasecmp(method, "HEAD"))
   { // line:netp:doit:beginrequesterr
     clienterror(fd, method, "501", "Not Implemented", "Tiny does not implement this method");
     return;
   }                       // line:netp:doit:endrequesterr
   read_requesthdrs(&rio); // line:netp:doit:readrequesthdrs
-
+  if (strcasecmp(method, "GET") == 0) method_flag = 0; 
+  else method_flag = 1;
   /* Parse URI from GET request */
   is_static = parse_uri(uri, filename, cgiargs); // line:netp:doit:staticcheck
   if (stat(filename, &sbuf) < 0)
@@ -86,7 +79,7 @@ void doit(int fd)
       clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't read the file");
       return;
     }
-    serve_static(fd, filename, sbuf.st_size); // line:netp:doit:servestatic
+    serve_static(fd, filename, sbuf.st_size, method_flag); // line:netp:doit:servestatic
   }
   else
   { /* Serve dynamic content */
@@ -95,7 +88,7 @@ void doit(int fd)
       clienterror(fd, filename, "403", "Forbidden", "Tiny couldn't run the CGI program");
       return;
     }
-    serve_dynamic(fd, filename, cgiargs); // line:netp:doit:servedynamic
+    serve_dynamic(fd, filename, cgiargs, method_flag); // line:netp:doit:servedynamic
   }
 }
 /* $end doit */
@@ -158,7 +151,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs)
  * serve_static - copy a file back to the client
  */
 /* $begin serve_static */
-void serve_static(int fd, char *filename, int filesize)
+void serve_static(int fd, char *filename, int filesize, char method_flag)
 {
   int srcfd;
   char *srcp, filetype[MAXLINE], buf[MAXBUF];
@@ -176,13 +169,11 @@ void serve_static(int fd, char *filename, int filesize)
   printf("Response headers:\n");
   printf("%s", buf);
   /* Send response body to client */
-  srcfd = Open(filename, O_RDONLY, 0);                        // line:netp:servestatic:open
-  // srcp = Mmap(0, filesize, PROT_READ, MAP_PRIVATE, srcfd, 0); // line:netp:servestatic:mmap
-  srcp = (char*)Malloc(filesize);
-  Rio_readn(srcfd,srcp,filesize);
-  Close(srcfd);                                               // line:netp:servestatic:close
-  Rio_writen(fd, srcp, filesize);                             // line:netp:servestatic:write
-  // Munmap(srcp, filesize);        
+  srcfd = Open(filename, O_RDONLY, 0);
+  srcp = (char *)Malloc(filesize);
+  Rio_readn(srcfd, srcp, filesize);
+  Close(srcfd);
+  Rio_writen(fd, srcp, filesize);
   free(srcp);
 }
 
@@ -210,7 +201,7 @@ void get_filetype(char *filename, char *filetype)
  * serve_dynamic - run a CGI program on behalf of the client
  */
 /* $begin serve_dynamic */
-void serve_dynamic(int fd, char *filename, char *cgiargs)
+void serve_dynamic(int fd, char *filename, char *cgiargs, char method_flag)
 {
   char buf[MAXLINE], *emptylist[] = {NULL};
 
@@ -235,37 +226,38 @@ void serve_dynamic(int fd, char *filename, char *cgiargs)
  * clienterror - returns an error message to the client
  */
 /* $begin clienterror */
-void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg)
-{
-  char buf[MAXLINE];
+void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg){
+  char buf[MAXLINE], body[MAXBUF];
 
-  /* Print the HTTP response headers */
-  sprintf(buf, "HTTP/1.1 %s %s\r\n", errnum, shortmsg);
-  Rio_writen(fd, buf, strlen(buf));
-  sprintf(buf, "Content-type: text/html\r\n\r\n");
-  Rio_writen(fd, buf, strlen(buf));
+  /* Build the HTTP response body*/
+  sprintf(body, "<html><title>Tiny Error</title>");
+  sprintf(body, "%s<body bgcolor=""ffffff"">\r\n", body);
+  sprintf(body, "%s%s: %s\r\n", body, errnum, shortmsg);
+  sprintf(body, "%s<p>%s: %s\r\n", body, longmsg, cause);
+  sprintf(body, "%s<hr><em>The Tiny Web Server</em>\r\n", body);
 
-  /* Print the HTTP response body */
-  sprintf(buf, "<html><title>Tiny Error</title>");
+  /* Print the HTTP response */
+  sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
   Rio_writen(fd, buf, strlen(buf));
-  sprintf(buf, "<body bgcolor=" "ffffff" ">\r\n");
+  sprintf(buf, "Content-type: text/html\r\n");
   Rio_writen(fd, buf, strlen(buf));
-  sprintf(buf, "%s: %s\r\n", errnum, shortmsg);
+  sprintf(buf, "Content-length: %d\r\n\r\n", (int)strlen(body));
+
   Rio_writen(fd, buf, strlen(buf));
-  sprintf(buf, "<p>%s: %s\r\n", longmsg, cause);
-  Rio_writen(fd, buf, strlen(buf));
-  sprintf(buf, "<hr><em>The Tiny Web server</em>\r\n");
-  Rio_writen(fd, buf, strlen(buf));
+  Rio_writen(fd, body, strlen(body));
 }
 /* $end clienterror */
-void echo(int connfd) {
+void echo(int connfd)
+{
   size_t n;
   char buf[MAXLINE];
   rio_t rio;
 
   Rio_readinitb(&rio, connfd);
-  while ((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0) {
-    if (strcmp(buf, "\r\n") == 0) break;
+  while ((n = Rio_readlineb(&rio, buf, MAXLINE)) != 0)
+  {
+    if (strcmp(buf, "\r\n") == 0)
+      break;
     Rio_writen(connfd, buf, n);
   }
 }

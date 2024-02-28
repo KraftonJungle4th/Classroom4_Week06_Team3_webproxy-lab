@@ -19,20 +19,17 @@
 <div style="display: flex;">
     <video muted autoplay loop width="150px" height="120px">
         <source src="blitz.mp4" type="video/mp4">
-        <strong>Your browser does not support the video tag.</strong>
     </video>
     <video muted autoplay loop width="150px" height="120px">
         <source src="leesin.mp4" type="video/mp4">
-        <strong>Your browser does not support the video tag.</strong>
     </video>
 </div>
 <video muted autoplay loop width="150px" height="120px" style="margin-top: -30px;">
     <source src="blitz2.mp4" type="video/mp4" >
-    <strong>Your browser does not support the video tag.</strong>
 </video>
 <input type="text" id="userInput" placeholder="Enter something">
 <button onclick="saveInput()">Save</button>
-<div id="savedInput">Saved input will appear here</div>
+<div id="savedInput">Saved input</div>
 <script>
     window.onload = function() {
         const saved = localStorage.getItem("userInput");
