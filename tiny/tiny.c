@@ -8,8 +8,7 @@ int parse_uri(char *uri, char *filename, char *cgiargs);
 void serve_static(int fd, char *filename, int filesize, char method_flag);
 void get_filetype(char *filename, char *filetype);
 void serve_dynamic(int fd, char *filename, char *cgiargs, char method_flag);
-void clienterror(int fd, char *cause, char *errnum,
-                 char *shortmsg, char *longmsg);
+void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longmsg);
 
 int main(int argc, char **argv)
 {
@@ -237,7 +236,7 @@ void clienterror(int fd, char *cause, char *errnum, char *shortmsg, char *longms
   sprintf(body, "%s<hr><em>The Tiny Web Server</em>\r\n", body);
 
   /* Print the HTTP response */
-  sprintf(buf, "HTTP/1.0 %s %s\r\n", errnum, shortmsg);
+  sprintf(buf, "HTTP/1.1 %s %s\r\n", errnum, shortmsg);
   Rio_writen(fd, buf, strlen(buf));
   sprintf(buf, "Content-type: text/html\r\n");
   Rio_writen(fd, buf, strlen(buf));
